@@ -23,9 +23,9 @@ const DocumentCheckIcon = () => (
   </svg>
 );
 
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? '/api/seo' 
-  : 'http://localhost:5000/api/seo';
+const API_URL = import.meta.env.VITE_API_URL ? 
+  `${import.meta.env.VITE_API_URL}/seo` : 
+  'http://localhost:5000/api/seo';
 
 function App() {
   const [text, setText] = useState('');
