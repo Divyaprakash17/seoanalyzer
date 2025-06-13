@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx vite build",
+    "build": "vite build --outDir dist --base=./",
     "lint": "eslint .",
     "preview": "vite preview",
-    "vercel-build": "npm install && npm run build"
+    "vercel-build": "npm install --include=dev && npm run build"
   },
   "browser": {
     "process": false
