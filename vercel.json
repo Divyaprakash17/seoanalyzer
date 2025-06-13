@@ -6,10 +6,7 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/server/server.js" },
-    { "src": "/(.*)", "dest": "/client/index.html" },
     { "src": "/assets/(.*)", "dest": "/client/assets/$1" },
-    { "src": "/@vite/(.*)", "status": 404 },
-    { "src": "/node_modules/(.*)", "status": 404 },
     { "src": "/(.*)", "dest": "/client/index.html" }
   ]
 }
