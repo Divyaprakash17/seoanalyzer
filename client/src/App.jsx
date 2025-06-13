@@ -23,9 +23,15 @@ const DocumentCheckIcon = () => (
   </svg>
 );
 
-const API_URL = import.meta.env.VITE_API_URL ? 
-  `${import.meta.env.VITE_API_URL}/seo` : 
-  'http://localhost:5000/api/seo';
+// In production, we use relative URLs that will be proxied by Vercel
+// In development, we use the full URL to the local server
+const isProduction = import.meta.env.PROD;
+const API_URL = isProduction 
+  ? '/api/seo'  // This will be relative to the current domain
+  : 'http://localhost:5000/api/seo';
+
+console.log(`Environment: ${isProduction ? 'Production' : 'Development'}`);
+console.log(`API URL: ${API_URL}`);
 
 function App() {
   const [text, setText] = useState('');
@@ -126,27 +132,92 @@ function App() {
     setError('');
     
     try {
-      const response = await axios.post(`${API_URL}/analyze`, { 
-        text,
-        contentType // Send content type to the backend
-      });
-      console.log('API Response:', response.data);
+      console.log('Sending request to:', API_URL + '/analyze');
+      console.log('Request payload:', { text, contentType });
       
-      if (response.data && response.data.data) {
-        const analysisData = {
-          ...response.data.data,
-          score: Number(response.data.data.score) || 0,
-          contentType // Include content type in the analysis data
-        };
-        console.log('Analysis data:', analysisData);
-        setAnalysis(analysisData);
-        setActiveTab('preview');
-      } else {
-        throw new Error('Invalid response format from server');
+      const response = await axios({
+        method: 'post',
+        url: `${API_URL}/analyze`,
+        data: { text, contentType },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        timeout: 30000 // 30 seconds timeout
+      });
+      
+      console.log('API Response Status:', response.status);
+      console.log('API Response Headers:', response.headers);
+      console.log('API Response Data:', response.data);
+      
+      if (response.status !== 200) {
+        throw new Error(`Server returned ${response.status} status`);
       }
+      
+      if (!response.data) {
+        throw new Error('Empty response from server');
+      }
+      
+      // Handle both response formats: { data: {...} } and direct data
+      const responseData = response.data.data || response.data;
+      
+      if (!responseData) {
+        throw new Error('Invalid response format: missing data');
+      }
+      
+      const analysisData = {
+        ...responseData,
+        score: Number(responseData.score) || 0,
+        originalText: responseData.originalText || text, // Fallback to original text
+        contentType: responseData.contentType || contentType
+      };
+      
+      console.log('Processed analysis data:', analysisData);
+      setAnalysis(analysisData);
+      setActiveTab('preview');
     } catch (err) {
-      console.error('Error analyzing text:', err);
-      setError(err.response?.data?.error || 'Failed to analyze text. Please try again.');
+      console.error('Error analyzing text:', {
+        name: err.name,
+        message: err.message,
+        response: err.response ? {
+          status: err.response.status,
+          statusText: err.response.statusText,
+          data: err.response.data
+        } : 'No response',
+        config: {
+          url: err.config?.url,
+          method: err.config?.method,
+          data: err.config?.data
+        }
+      });
+      
+      let errorMessage = 'Failed to analyze text. ';
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMessage += 'Request timed out. Please try again.';
+      } else if (err.response) {
+        // Server responded with an error status code
+        const { status, data } = err.response;
+        if (status === 400) {
+          errorMessage = data.error || 'Invalid request. Please check your input.';
+        } else if (status === 401) {
+          errorMessage = 'Authentication failed. Please check your API key.';
+        } else if (status === 429) {
+          errorMessage = 'Rate limit exceeded. Please try again later.';
+        } else if (status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else {
+          errorMessage = `Error: ${status} - ${data?.error || 'Unknown error'}`;
+        }
+      } else if (err.request) {
+        // Request was made but no response received
+        errorMessage += 'No response from server. Please check your connection.';
+      } else {
+        // Something else happened
+        errorMessage += err.message || 'Unknown error occurred.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }
