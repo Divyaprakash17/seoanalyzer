@@ -1,0 +1,19 @@
+{
+  "name": "seo-analyzer",
+  "version": "1.0.0",
+  "description": "SEO Content Optimizer with Gemini AI",
+  "scripts": {
+    "client:install": "cd client && npm install",
+    "client:build": "cd client && npm run build",
+    "server:install": "cd server && npm install",
+    "build": "npm run client:install && npm run client:build",
+    "start": "node server/server.js",
+    "dev": "concurrently \"cd client && npm run dev\" \"cd server && npm run dev\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
