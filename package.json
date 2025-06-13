@@ -9,7 +9,7 @@
     "build": "npm run client:install && npm run client:build",
     "start": "node server/server.js",
     "dev": "concurrently \"cd client && npm run dev\" \"cd server && npm run dev\"",
-    "vercel-build": "cd client && npm install && npm run build"
+    "vercel-build": "cd client && npm install --production=false && npm run build"
   },
   "keywords": [],
   "author": "",
